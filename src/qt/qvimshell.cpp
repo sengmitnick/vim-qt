@@ -15,7 +15,7 @@ extern "C" {
 #include "colortable.h"
 
 QVimShell::QVimShell(QWidget *parent)
-:QWidget(parent), m_encoding_utf8(true),
+:QWidget(parent),
 	m_lastClickEvent(-1), m_tooltip(0), m_slowStringDrawing(false),
 	m_mouseHidden(false)
 {

@@ -41,6 +41,7 @@ public:
 	int charWidth();
 
 	void setEncodingUtf8(bool);
+	static void setupColorMap();
 	virtual QVariant inputMethodQuery(Qt::InputMethodQuery);
 	void setSlowStringDrawing(bool slow) {m_slowStringDrawing = slow;}
 
@@ -118,7 +119,6 @@ private:
 
 	enum blink_state{BLINK_NONE, BLINK_ON, BLINK_OFF};
 	blink_state blinkState;
-	bool m_encoding_utf8;
 
 	QQueue<PaintOperation> paintOps;
 

@@ -191,12 +191,15 @@ QFont VimWrapper::normalFont()
 
 int VimWrapper::charCellWidth(const QChar& c)
 {
+#ifdef FEAT_MBYTE
 	int len = utf_char2cells(c.unicode());
 	if ( len <= 2 ) {
 		return len;
 	}
-
 	return 0;
+#else
+	return 1;
+#endif
 }
 
 int VimWrapper::stringCellWidth(const QString& s)
@@ -324,22 +327,24 @@ VimWrapper::newTab(int idx)
 
 QByteArray VimWrapper::convertTo(const QString& s)
 {
-	bool m_encoding_utf8 = true; // FIXME: check encoding
-
-	if ( m_encoding_utf8 ) {
+#ifdef FEAT_MBYTE
+	if ( enc_utf8 == TRUE ) {
 		return s.toUtf8();
-	} else {
+	} else
+#endif
+	{
 		return s.toAscii();
 	}
 }
 
 QString VimWrapper::convertFrom(const char *s, int size)
 {
-	bool m_encoding_utf8 = true; // FIXME: check encoding
-
-	if ( m_encoding_utf8 ) {
+#ifdef FEAT_MBYTE
+	if ( enc_utf8 == TRUE ) {
 		return QString::fromUtf8(s, size);
-	} else {
+	} else
+#endif
+	{
 		return QString::fromAscii(s, size);
 	}
 }
