@@ -486,11 +486,6 @@ void QVimShell::queuePaintOp(PaintOperation op)
 	}
 }
 
-void QVimShell::setEncodingUtf8(bool enabled)
-{
-	m_encoding_utf8 = enabled;
-}
-
 void QVimShell::dragEnterEvent(QDragEnterEvent *ev)
 {
 	if ( ev->mimeData()->hasFormat("text/uri-list") ||
