@@ -2591,6 +2591,7 @@ if test -z "$SKIP_QT" -a -z "$DONT_FIND_QT"; then
 	#
 	QMAKE="$QT_DIR/bin/qmake"
 	QT_MOC="$QT_DIR/bin/moc"
+	QT_RCC="$QT_DIR/bin/rcc"
 
     	AC_MSG_CHECKING(for $QMAKE)
 	if test ! -x "$QMAKE"; then
@@ -2600,6 +2601,11 @@ if test -z "$SKIP_QT" -a -z "$DONT_FIND_QT"; then
     	AC_MSG_CHECKING(for $QT_MOC)
 	if test ! -x "$QT_MOC"; then
             AC_MSG_ERROR("Unable to find moc")
+	fi
+
+    	AC_MSG_CHECKING(for $QT_RCC)
+	if test ! -x "$QT_RCC"; then
+            AC_MSG_ERROR("Unable to find rcc")
 	fi
     else
         AC_MSG_RESULT(no)
@@ -2648,6 +2654,27 @@ if test -z "$SKIP_QT" -a -z "$DONT_FIND_QT"; then
     
         if test -z "$QT_MOC"; then
             AC_MSG_ERROR("Unable to find moc")
+        fi
+
+        #
+        # Find rcc
+        # - Exactly the same as previous case with qmake
+        # 
+        AC_PATH_PROG(QT_RCC, rcc4)
+        if test -z "$QT_RCC"; then
+            AC_PATH_PROG(QT_RCC, RCC-qt4)
+        fi
+ 
+        if test -z "$QT_RCC"; then
+            AC_PATH_PROG(QT_RCC, rcc)
+        fi
+
+        if test -z "$QT_RCC"; then
+            AC_PATH_PROG(QT_RCC, rcc, , $QT_BIN_PATH)
+        fi
+    
+        if test -z "$QT_RCC"; then
+            AC_MSG_ERROR("Unable to find rcc")
         fi
     fi
 
@@ -2763,6 +2790,7 @@ EOF
     LDFLAGS="$LDFLAGS $QT_LFLAGS -lstdc++"
     AC_SUBST(QT_LIBS)
     AC_SUBST(QT_MOC)
+    AC_SUBST(QT_RCC)
     AC_SUBST(QT_INCPATH)
     AC_SUBST(QT_CXXFLAGS)
     AC_SUBST(QT_CFLAGS)
