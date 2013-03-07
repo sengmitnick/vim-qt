@@ -26,8 +26,8 @@ typedef union {
     char_u   uc[8];
 } block8;
 
-#if defined(WIN3264) || defined(DOS32)
-  /* MS-Windows is always little endian */
+#if defined(WIN3264) || defined(DOS32) || defined(QT)
+  /* MS-Windows is always little endian and Qt will set WORDS_BIGENDIAN */
 #else
 # ifdef HAVE_CONFIG_H
    /* in configure.in AC_C_BIGENDIAN() defines WORDS_BIGENDIAN when needed */

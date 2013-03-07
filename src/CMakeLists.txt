@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 find_package(Qt4 REQUIRED)
 set( QT_USE_QTGUI TRUE )
+set( QT_USE_QTNETWORK TRUE )
 include(${QT_USE_FILE} )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -117,7 +118,31 @@ if(MSVC OR MINGW)
 	target_link_libraries(qvim ${QT_QTMAIN_LIBRARY} # Link to qtmain.lib to avoid WinMain()
 				   ${QT_LIBRARIES} )	# Link to Qt
 else(MSVC OR MINGW)
-	message(FATAL_ERROR "Could not find Visual Studio or Mingw - are they on the path? This is Windows, right?")
+#	message(FATAL_ERROR "Could not find Visual Studio or Mingw - are they on the path? This is Windows, right?")
+
+	INCLUDE (CheckTypeSize)
+	check_type_size(int SIZEOF_INT)
+
+	set(VIM_SOURCES ${VIM_SOURCES} 
+			os_qt.cpp 
+			)
+
+	add_definitions(-DQT
+			-DNO_X11_INCLUDES
+			-DFEAT_GUI_QT
+			-UHAVE_X11
+			-DFEAT_HUGE
+			-DFEAT_MBYTE
+			-UFEAT_SIGN
+			-D__func__=__FUNCTION__
+			-DSIZEOF_INT=${SIZEOF_INT} #FIXME
+			)
+
+	set(SOURCES ${VIM_SOURCES} ${GUI_SOURCES} ${MOC_SOURCES} ${QVIM_RC_SRCS})
+	add_executable(qvim ${SOURCES})
+
+	target_link_libraries(qvim # Link to qtmain.lib to avoid WinMain()
+				   ${QT_LIBRARIES} )	# Link to Qt
 endif(MSVC OR MINGW)
 
 

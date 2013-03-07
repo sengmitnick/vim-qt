@@ -319,6 +319,10 @@
 # undef	    CHECK_INODE
 #endif
 
+#ifdef QT
+# include "os_qt.h"
+#endif
+
 #ifdef AMIGA
 # include "os_amiga.h"
 #endif
