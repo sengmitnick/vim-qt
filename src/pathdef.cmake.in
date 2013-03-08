@@ -1,7 +1,7 @@
 #include "vim.h"
 char_u *default_vim_dir = (char_u *)"${CMAKE_INSTALL_PREFIX}share/vim/";
 char_u *default_vimruntime_dir = (char_u *) NULL;
-char_u *all_cflags = (char_u *)"gcc -c -I. -Iproto -DFEAT_GUI_QT ...";
-char_u *all_lflags = (char_u *)"gcc   -L/usr/local/lib -o vim -lXaw -lXmu -lXext -lXt -lSM -lICE -lXpm -lXt -lX11 -lXdmcp -lSM -lICE -ldl -lm -lncurses -lnsl  -lacl -lattr -lgpm          ";
-char_u *compiled_user = (char_u *)"raf-r";
++char_u *all_cflags = (char_u *)"${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS_RELEASE}      ";
++char_u *all_lflags = (char_u *)"${CMAKE_EXE_LINKER_FLAGS_RELEASE}         ";
++char_u *compiled_user = (char_u *)"$ENV{USER}";
 char_u *compiled_sys = (char_u *)"${SITE_NAME}";

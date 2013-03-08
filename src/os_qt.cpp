@@ -11,9 +11,7 @@
 
 // TODO: permission checking in NTFS
 
-#ifndef UNIX
 char_u e_screenmode[] = "E359: Screen mode setting not supported";
-#endif
 
 
 extern "C" {
