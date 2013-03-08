@@ -11,8 +11,10 @@
 
 // TODO: permission checking in NTFS
 
-
+#ifndef UNIX
 char_u e_screenmode[] = "E359: Screen mode setting not supported";
+#endif
+
 
 extern "C" {
 
@@ -21,8 +23,9 @@ void mch_settitle(char_u *title, char_u *icon)
 	gui_mch_settitle(title, icon);
 }
 
-void mch_restore_title(int)
+void mch_restore_title(int t)
 {
+	qDebug() << __func__ << t;
 	// WHAT?
 }
 
@@ -67,6 +70,7 @@ long mch_get_pid(void)
 
 int mch_can_exe(char_u *name)
 {
+
 	return -1;
 }
 
@@ -77,7 +81,7 @@ int mch_can_exe(char_u *name)
 int mch_dirname(char_u *buf, int len)
 {
 	QByteArray p = VimWrapper::convertTo(QDir::currentPath());
-	if ( p.size() < len-1) {
+	if ( p.size() > len) {
 		return FAIL;
 	}
 	vim_strncpy(buf, (char_u *)p.constData(), len - 1);
@@ -105,33 +109,38 @@ int mch_rename(const char *oldFile, const char *newFile)
  */
 void mch_exit(int r)
 {
-    display_errors();
-    ml_close_all(TRUE);		/* remove all memfiles */
+	qDebug() << __func__ << r;
+	display_errors();
+	ml_close_all(TRUE);		/* remove all memfiles */
 
 # ifdef FEAT_NETBEANS_INTG
-    if (WSInitialized)
-    {
-	WSInitialized = FALSE;
-	WSACleanup();
-    }
+	if (WSInitialized)
+	{
+		WSInitialized = FALSE;
+		WSACleanup();
+	}
 # endif
 
-    if (gui.in_use)
-	gui_exit(r);
+	if (gui.in_use)
+		gui_exit(r);
 
 #ifdef EXITFREE
-    free_all_mem();
+	free_all_mem();
 #endif
 
-    exit(r);
+	exit(r);
 }
 
-
+/*
+ * Place absolute path to fname in buf
+ */
 int mch_FullName( char_u *fname, char_u *buf, int len, int force)
 {
-	QByteArray p = VimWrapper::convertTo(QFileInfo((char*)fname).canonicalFilePath());
+	// force is ignore (as TRUE)
+	//
+	QByteArray p = VimWrapper::convertTo(QFileInfo((char*)fname).absoluteFilePath());
 	
-	if ( p.size() > len -1 ) {
+	if ( p.isEmpty() ||  p.size() > len -1 ) {
 		return FAIL;
 	}
 	vim_strncpy(buf, (char_u *)p.constData(), len - 1);
@@ -194,12 +203,27 @@ void mch_hide(char_u *)
 long mch_getperm(char_u *name)
 {
 	QFileInfo f((char*)name);
+
 	if (!f.exists()) {
 		return -1;
 	}
 
-	// FIXME
-	return f.permissions();
+	QFile::Permissions perm = f.permissions();
+	long p = 0;
+
+	p |= (perm & QFile::ReadOwner) ? 0400 : 0;
+	p |= (perm & QFile::WriteOwner) ? 0200 : 0;
+	p |= (perm & QFile::ExeOwner) ? 0100 : 0;
+
+	p |= (perm & QFile::ReadGroup) ? 0040 : 0;
+	p |= (perm & QFile::WriteGroup) ? 0020 : 0;
+	p |= (perm & QFile::ExeGroup) ? 0010 : 0;
+
+	p |= (perm & QFile::ReadOther) ? 0004 : 0;
+	p |= (perm & QFile::WriteOther) ? 0002 : 0;
+	p |= (perm & QFile::ExeOther) ? 0001 : 0;
+
+	return p;
 }
 
 /*
@@ -210,7 +234,21 @@ long mch_getperm(char_u *name)
 int mch_setperm(char_u *name, long perm)
 {
 	QFile f((char*)name);
-	return f.setPermissions(QFile::Permissions(perm)) ? TRUE : FALSE;
+	QFile::Permissions newperm;
+
+	newperm |= (perm & 0400) ? QFile::ReadOwner : QFile::Permissions();
+	newperm |= (perm & 0200) ? QFile::WriteOwner : QFile::Permissions();
+	newperm |= (perm & 0100) ? QFile::ExeOwner : QFile::Permissions();
+
+	newperm |= (perm & 0040) ? QFile::ReadGroup : QFile::Permissions();
+	newperm |= (perm & 0020) ? QFile::WriteGroup : QFile::Permissions();
+	newperm |= (perm & 0010) ? QFile::ExeGroup : QFile::Permissions();
+
+	newperm |= (perm & 0004) ? QFile::ReadOther : QFile::Permissions();
+	newperm |= (perm & 0002) ? QFile::WriteOther : QFile::Permissions();
+	newperm |= (perm & 0001) ? QFile::ExeOther : QFile::Permissions();
+
+	return f.setPermissions(newperm) ? TRUE : FALSE;
 }
 
 
@@ -241,6 +279,7 @@ void mch_free_acl(vim_acl_T acl)
  */
 int mch_nodetype(char_u *name)
 {
+	qDebug() << __func__ << (char*) name;
 
 	QFileInfo fi((char*)name);
 
@@ -258,28 +297,22 @@ int mch_nodetype(char_u *name)
 	return NODE_OTHER;
 }
 
-/*
- * return non-zero if a character is available
- */
-int mch_char_avail()
-{
-	return 0;
-}
-
-
 void mch_breakcheck(void)
 {
+	// FIXME:
+	//qDebug() << __func__;
 }
 
 
 void mch_settmode(int tmode)
 {
-    /* nothing to do */
+	/* nothing to do */
 }
 
 
 int mch_get_shellsize()
 {
+	qDebug() << __func__;
 	return FAIL;
 }
 
@@ -288,7 +321,6 @@ int mch_get_shellsize()
  */
 int mch_get_user_name(char_u *s, int len)
 {
-
 	char *username = getenv("USER");
 	if ( username == NULL ) {
 		username = getenv("USERNAME");
@@ -307,18 +339,66 @@ int mch_get_user_name(char_u *s, int len)
  */
 int mch_call_shell(char_u *cmd, int options)	/* SHELL_*, see vim.h */
 {
+	qDebug() << __func__ << (char*)cmd;
 	return FAIL;
 }
 
-
+/*
+ * Return TRUE if the string "p" contains a wildcard.
+ * Don't recognize '~' at the end as a wildcard.
+ */
 int mch_has_wildcard(char_u *p)
 {
+	for ( ; *p; mb_ptr_adv(p)) {
+#ifndef OS2
+		if (*p == '\\' && p[1] != NUL) {
+			++p;
+		} else {
+#endif
+			if (vim_strchr((char_u *)
+#ifdef VMS
+						"*?%$"
+#else
+# ifdef OS2
+#  ifdef VIM_BACKTICK
+						"*?$`"
+#  else
+						"*?$"
+#  endif
+# else
+						"*?[{`'$"
+# endif
+#endif
+						, *p) != NULL
+					|| (*p == '~' && p[1] != NUL)) {
+				return TRUE;
+			}
+		}
+	}
 	return FALSE;
 }
 
-
+/*
+ * mch_expand_wildcards() - this code does wild-card pattern matching using
+ * the shell
+ *
+ * return OK for success, FAIL for error (you may lose some memory) and put
+ * an error message in *file.
+ *
+ * num_pat is number of input patterns
+ * pat is array of pointers to input patterns
+ * num_file is pointer to number of matched file names
+ * file is pointer to array of pointers to matched file names
+ */
 int mch_expand_wildcards(int num_pat, char_u **pat, int *num_file, char_u ***file, int flags)
 {
+	qDebug() << __func__;
+	for ( int i=0; i<num_pat; i++ ) {
+		qDebug() << "\t" << (char*)pat[i];
+	}
+
+	*num_file = 0;
+
 	return FAIL;
 }
 
@@ -328,9 +408,30 @@ int mch_expand_wildcards(int num_pat, char_u **pat, int *num_file, char_u ***fil
  */
 int mch_has_exp_wildcard(char_u *p)
 {
+	for ( ; *p; mb_ptr_adv(p)) {
+#ifndef OS2
+		if (*p == '\\' && p[1] != NUL) {
+			++p;
+		} else {
+#endif
+			if (vim_strchr((char_u *)
+#ifdef VMS
+						"*?%"
+#else
+# ifdef OS2
+						"*?"
+# else
+						"*?[{'"
+# endif
+#endif
+						, *p) != NULL) {
+
+				return TRUE;
+			}
+		}
+	}
 	return FALSE;
 }
-
 
 /*
  * Expand a path into all matching files and/or directories.  Handles "*",
@@ -340,7 +441,64 @@ int mch_has_exp_wildcard(char_u *p)
  */
 int mch_expandpath(garray_T *gap, char_u *path, int flags)
 {
-	return 0;
+	int start_len = gap->ga_len;
+	QRegExp r = QRegExp((char*)path);
+	r.setPatternSyntax(QRegExp::WildcardUnix);
+	r.setCaseSensitivity(flags & EW_ICASE ? Qt::CaseInsensitive : Qt::CaseSensitive);
+
+	QString p((char*)path);
+	int i, pos=-1;
+	if ( (i=p.indexOf('*')) != -1 ) {
+		pos = i;
+	}
+	if ( (i=p.indexOf('?')) != -1 && i<pos ) {
+		pos = i;
+	}
+	if ( (i=p.indexOf('[')) != -1 && i<pos ) {
+		pos = i;
+	}
+
+	QFileInfo base;
+	if ( pos == -1 ) {
+		// No pattern?
+		return 0;
+	} else if ( pos == 0 ) {
+		// Base is the current dir
+		base.setFile(".");
+	} else {
+		QFileInfo fi(p.mid(0, pos));
+		if ( fi.isDir() ) {
+			base = fi;
+		} else {
+			base = QFileInfo(fi.path());
+		}
+	}
+
+	//qDebug() << __func__ << (char*) path << base.filePath();
+	QFileInfoList pending, matches;
+	pending << base;
+	while ( pending.size()) {
+
+		QFileInfo fi = pending.takeFirst();
+
+		QDir::Filters filter = QDir::NoDotAndDotDot | QDir::AllEntries;
+		QDir dir(fi.filePath());
+		foreach ( QFileInfo entry, dir.entryInfoList(filter)) {
+			if ( r.exactMatch(entry.filePath()) ) {
+				matches.append(entry);
+			}
+
+			if ( entry.isDir() && r.matchedLength() != 0 ) {
+				pending.append(entry);
+			}
+		}
+	}
+	
+	foreach(QFileInfo entry, matches) {
+		addfile(gap, (char_u*)VimWrapper::convertTo(entry.filePath()).constData(), flags);
+	}
+
+	return gap->ga_len - start_len;
 }
 
 
@@ -350,7 +508,7 @@ int mch_expandpath(garray_T *gap, char_u *path, int flags)
 void mch_suspend()
 {
 	qDebug() << __func__;
-	suspend_shell();
+	//suspend_shell();
 }
 
 void mch_setmouse(int)
@@ -368,15 +526,6 @@ void mch_new_shellsize()
     /* Nothing to do. */
 }
 
-void mch_write( char_u *s, int len)
-{
-	/* Do nothing here */
-}
-
-int mch_inchar(char_u *buf, int maxlen, long time, int tb_change_cnt)
-{
-	qFatal("This should never be called %s", __func__);
-}
 
 } // extern "C"
 
